@@ -59,6 +59,11 @@ const UserModel = new Schema({
         type: Number,
         required: false,
         default: null
+    },
+    genres: {
+        type: [String],
+        required: false,
+        default: []
     }
 }, { timestamps: true });
 

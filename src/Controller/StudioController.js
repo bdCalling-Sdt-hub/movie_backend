@@ -4,6 +4,7 @@ const { API_KEY } = require("../config/defaults");
 const globalErrorHandler = require("../utils/globalErrorHandler");
 const StudioModel = require('../Models/StudioModel');
 const Queries = require('../utils/Queries');
+const Follow = require('../Models/FollowModel');
 // get studio list
 const GetTMDBStudioList = async (req, res, next) => {
     try {
@@ -68,9 +69,58 @@ const GetStudio = async (req, res, next) => {
         globalErrorHandler(error, req, res, next, "Studio");
     }
 }
+// get movie by id 
+const GetStudioDetails = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const queryKeys = {};
+        const searchKey = {};
+        queryKeys.user = req?.user?.id;
+        const [result, followModel, randomStudios] = await Promise.all([
+            StudioModel.findOne({ _id: id }),
+            Queries(Follow, queryKeys, searchKey),
+            StudioModel.aggregate([
+                { $sample: { size: 4 } }
+            ])
+        ]);
+        if (!result) {
+            return res.status(404).send({
+                success: false,
+                message: "Studio not found"
+            });
+        }
+        const followEdStudioId = followModel?.data?.map(item => item?.studio?.toString()) || [];
+        console.log(followEdStudioId)
+        const studioData = result.toObject ? result.toObject() : result;
+        const formattedData = {
+            ...studioData,
+            isFollowed: followEdStudioId.includes(id)
+        };
+        res.status(200).send({
+            success: true,
+            data: { details: formattedData, relatedStudios: randomStudios }
+        });
+    } catch (error) {
+        globalErrorHandler(error, req, res, next, "Studio");
+    }
+};
+
+const getRandomStudios = async (req, res, next) => {
+    try {
+        const randomStudios = await StudioModel.aggregate([
+            { $sample: { size: 4 } }
+        ]);
+        res.status(200).send({ success: true, data: randomStudios });
+    } catch (error) {
+        globalErrorHandler(error, req, res, next, "Studio");
+    }
+};
+
 module.exports = {
     GetTMDBStudioList,
     CreateStudio,
     DeleteStudio,
-    GetStudio
+    GetStudio,
+    GetStudioDetails,
+    getRandomStudios
 };

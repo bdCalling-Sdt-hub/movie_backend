@@ -31,13 +31,15 @@ const handleValidationError = (err) => {
 const handleProdError = (res, error) => {
     if (error.isOperational) {
         res.status(error.statusCode).send({
-            status: error.statusCode,
+            // status: error.statusCode,
+            success: false,
             message: error.message
         });
     } else {
         console.error('ERROR 💥:', error);
         res.status(500).send({
             status: 'error',
+            success: false,
             message: 'Something went wrong! Please try again later.'
         });
     }

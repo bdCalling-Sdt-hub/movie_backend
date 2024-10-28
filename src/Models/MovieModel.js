@@ -28,7 +28,8 @@ const movieSchema = new mongoose.Schema({
     },
     overview: {
         type: String,
-        required: true
+        required: false,
+        default: ''
     },
     popularity: {
         type: Number,
@@ -58,6 +59,10 @@ const movieSchema = new mongoose.Schema({
     vote: {
         type: Number,
         required: true
+    },
+    studio_id: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: [true, 'studio id is required']
     },
     type: {
         type: String,

@@ -8,6 +8,7 @@ const User = require("../Models/UserModel");
 const UnlinkFiles = require("../middlewares/FileUpload/UnlinkFiles");
 const Queries = require("../utils/Queries");
 const globalErrorHandler = require("../utils/globalErrorHandler");
+const e = require("express");
 
 // signUp
 const SignUp = async (req, res, next) => {
@@ -19,14 +20,14 @@ const SignUp = async (req, res, next) => {
         const email = user?.email
         const existingUsers = await User.findOne({ email: email, verified: false })
         if (existingUsers) {
-            const activationCode = Math.floor(100000 + Math.random() * 900000).toString();
+            const activationCode = Math.floor(1000 + Math.random() * 9000).toString();
             const code = new Verification({
                 email: existingUsers?.email,
                 code: activationCode
             })
             await code.save();
             SendEmail({
-                sender: 'Medical',
+                sender: 'movie',
                 receiver: existingUsers?.email,
                 subject: 'verify code',
                 msg: `<h1>
@@ -35,10 +36,10 @@ const SignUp = async (req, res, next) => {
             <p>you have successfully registered our website</p>
             <p>now you can explore more of your website</p>
             <p>please verify your email with this code : <strong>${activationCode}</strong></p>
-            <h1>medical</h1>
+            <h1>movie</h1>
             `,
             })
-            return res.status(200).send({ success: true, data: existingUsers, message: 'user already exist a verification email has been sent to your email' });
+            return res.status(200).send({ success: true, message: 'a verification email has been sent to your email', data: existingUsers, });
         }
         let existingAdmin;
         if (req.body?.role && req?.body?.role === "ADMIN") {
@@ -47,12 +48,12 @@ const SignUp = async (req, res, next) => {
         }
 
         if (existingAdmin?.data?.length > 0) {
-            return res.status(201).send({ success: false, message: "admin already exist" });
+            return res.status(201).send({ success: false, message: "You can't register as admin" });
         }
         const newUser = new User({ ...user, password });
         const savedUser = await newUser.save();
         if (savedUser?._id) {
-            const activationCode = Math.floor(100000 + Math.random() * 900000).toString();
+            const activationCode = Math.floor(1000 + Math.random() * 9000).toString();
             const code = new Verification({
                 email: savedUser?.email,
                 code: activationCode
@@ -60,7 +61,7 @@ const SignUp = async (req, res, next) => {
             await code.save();
             //send mail
             SendEmail({
-                sender: 'Medical',
+                sender: 'Movie',
                 receiver: savedUser?.email,
                 subject: 'register user successfully',
                 msg: `<h1>
@@ -69,12 +70,12 @@ const SignUp = async (req, res, next) => {
                 <p>you have successfully registered our website</p>
                 <p>now you can explore more of your website</p>
                 <p>please verify your email with this code : <strong>${activationCode}</strong></p>
-                <h1>medical</h1>
+                <h1>Movie</h1>
                 `,
             })
 
             return res.status(200).send({
-                success: true, data: savedUser, message: 'user created successfully and verification code sent to your email',
+                success: true, message: 'a verification code sent to your email', data: savedUser,
             });
         } else {
             res.status(201).send({ success: false, message: 'something went wrong' });
@@ -86,7 +87,7 @@ const SignUp = async (req, res, next) => {
 }
 
 // login 
-const SignIn = async (req, res) => {
+const SignIn = async (req, res, next) => {
     try {
         const { email, password } = req.body
         //  console.log(email, password)
@@ -94,12 +95,12 @@ const SignIn = async (req, res) => {
             User.findOne({ email: email }),
         ])
         if (!user) {
-            res.status(400).send({ success: false, message: "user doesn't exist" });
+            return res.status(400).send({ success: false, message: "user doesn't exist" });
         }
         let result = await bcrypt.compare(password, user?.password);
         if (result) {
             if (user && !user?.verified) {
-                const activationCode = Math.floor(100000 + Math.random() * 900000).toString();
+                const activationCode = Math.floor(1000 + Math.random() * 9000).toString();
                 const code = new Verification({
                     email: user?.email,
                     code: activationCode
@@ -118,7 +119,7 @@ const SignIn = async (req, res) => {
             }
             const token = await jwt.sign(userData, ACCESS_TOKEN_SECRET, { expiresIn: 36000000 });
             return res.status(200).send({
-                success: true, data: user || doctor, token
+                success: true, message: "login Successfully", data: user || doctor, token
 
             });
         } else {
@@ -126,30 +127,33 @@ const SignIn = async (req, res) => {
         }
 
     } catch (error) {
-        res.status(500).send({ success: false, message: error?.message || 'Internal server error', ...error });
+
+        globalErrorHandler(error, req, res, next, 'user')
     }
 }
 //update user
-const UpdateUser = async (req, res) => {
+const UpdateUser = async (req, res, next) => {
     try {
         const { id } = req?.user;
-        console.log(id)
         const user = await User.findOne({ _id: id });
         if (!user) {
             return res.status(400).send({ success: false, message: "user doesn't exist" });
         }
         const { access, role, email, password, ...data } = req.body;
-        const { img } = req.files || {};
+        // const { img } = req.files || {};
         if (req?.files?.img) {
             data.img = req.files.img[0]?.path
         }
+        const { genres, ...othersData } = data
+        if (genres) {
+            othersData.genres = JSON.parse(genres)
+        }
         const result = await User.updateOne({ _id: id }, {
             $set: {
-                ...data,
-                img: img?.[0]?.path || user?.img,
+                ...othersData,
             }
         })
-        if (user?.img) {
+        if (req?.files?.img && user?.img) {
             UnlinkFiles([user?.img]);
         }
         res.status(200).send({ success: true, data: result, message: 'Profile Updated Successfully' });
@@ -159,11 +163,11 @@ const UpdateUser = async (req, res) => {
 }
 
 // change password 
-const ChangePassword = async (req, res) => {
+const ChangePassword = async (req, res, next) => {
     try {
         const { old_Password, password, confirm_password } = req.body;
         if (password !== confirm_password) {
-            return res.status(201).send({ success: false, message: "confirm password doesn't match" });
+            return res.status(400).send({ success: false, message: "confirm password doesn't match" });
         }
         const { id, role } = req?.user
         //console.log(id, { old_Password, password })
@@ -188,14 +192,14 @@ const ChangePassword = async (req, res) => {
                 }
             })
             SendEmail({
-                sender: 'medical',
+                sender: 'movie',
                 receiver: user?.email,
                 subject: 'password Changed successfully',
                 msg: `<h1> hallow ${user?.name} </h1/>
                 <p>your password has been changed</p>
                 <p>your new password : ${password} </p>
                 <p>Thank you </p>
-                <h1>medical</h1>
+                <h1>movie</h1>
                 `,
             })
             return res.status(200).send({ success: true, message: 'password updated successfully', data: result });
@@ -208,7 +212,7 @@ const ChangePassword = async (req, res) => {
 }
 
 // forget password send verification code
-const SendVerifyEmail = async (req, res) => {
+const SendVerifyEmail = async (req, res,next) => {
     try {
         const { email } = req.body
         if (!email) {
@@ -218,7 +222,7 @@ const SendVerifyEmail = async (req, res) => {
         if (!user) {
             return res.status(400).send({ success: false, message: 'user not found' });
         }
-        const activationCode = Math.floor(100000 + Math.random() * 900000).toString();
+        const activationCode = Math.floor(1000 + Math.random() * 9000).toString();
         const code = new Verification({
             email: email,
             code: activationCode
@@ -226,13 +230,13 @@ const SendVerifyEmail = async (req, res) => {
         const result = await code.save()
         if (result?._id) {
             SendEmail({
-                sender: 'medical',
+                sender: 'movie',
                 receiver: user?.email,
                 subject: 'register user successfully',
                 msg: `<h1> hallow ${user?.name} </h1/>
                 <p>your password reset code is : <strong>${activationCode}</strong> </p>
                 <p>Thank you </p>
-                <h1>medical</h1>
+                <h1>movie</h1>
                 `,
             })
             //console.log(email)
@@ -245,7 +249,7 @@ const SendVerifyEmail = async (req, res) => {
 }
 
 //verify code
-const VerifyCode = async (req, res) => {
+const VerifyCode = async (req, res,next) => {
     const { code, email } = req.body
     try {
         const [verify, user] = await Promise.all([
@@ -261,8 +265,15 @@ const VerifyCode = async (req, res) => {
                     verified: true
                 }
             })
+            const userData = {
+                email: user?.email,
+                name: user?.name,
+                role: user?.role,
+                id: user?._id
+            }
+            const token = await jwt.sign(userData, ACCESS_TOKEN_SECRET, { expiresIn: 3600000000 });
             const accessToken = await jwt.sign({ code, email }, ACCESS_TOKEN_SECRET, { expiresIn: 600 });
-            res.status(200).send({ success: true, accessToken, message: `user verified successfully` })
+            res.status(200).send({ success: true, password_reset_token: accessToken, token, message: `user verified successfully` })
         } else {
             res.status(401).send({ success: false, message: "verification code doesn't match" });
         }
@@ -272,40 +283,32 @@ const VerifyCode = async (req, res) => {
 }
 
 //reset password
-const ResetPassword = async (req, res) => {
+const ResetPassword = async (req, res,next) => {
     try {
         const requestedUser = req?.user
         const verify = await Verification.findOne({ email: requestedUser?.email, code: requestedUser?.code })
         if (verify?._id) {
-            const { password, confirm_password, type } = req.body
+            const { password, confirm_password, } = req.body
             if (password !== confirm_password) {
-                return res.status(201).send({ success: false, error: { message: "confirm password doesn't match" } });
+                return res.status(400).send({ success: false, error: { message: "confirm password doesn't match" } });
             }
             const hash_pass = await HashPassword(password)
             //console.log(hash_pass)
             let result;
-            if (type === 'DOCTOR') {
-                result = await Doctor.updateOne({ email: verify?.email }, {
-                    $set: {
-                        password: hash_pass
-                    }
-                })
-            } else {
-                result = await User.updateOne({ email: verify?.email }, {
-                    $set: {
-                        password: hash_pass
-                    }
-                })
-            }
+            result = await User.updateOne({ email: verify?.email }, {
+                $set: {
+                    password: hash_pass
+                }
+            })
             SendEmail({
-                sender: 'medical',
+                sender: 'movie',
                 receiver: requestedUser?.email,
                 subject: 'password reset successfully',
                 msg: `<h1> hallow ${requestedUser?.name} </h1/>
             <p>your password has been changed</p>
             <p>your new password : ${password} </p>
             <p>Thank you </p>
-            <h1>medical</h1>
+            <h1>movie</h1>
             `,
             })
             await Verification.deleteOne({ email: requestedUser?.email, code: requestedUser?.code })
@@ -320,16 +323,47 @@ const ResetPassword = async (req, res) => {
 }
 
 // get user profile
-const GetProfile = async (req, res) => {
+const GetProfile = async (req, res,next) => {
     const { email } = req.user;
     try {
         const result = await User.findOne({ email: email })
+        if (!result) {
+            return res.status(400).send({ success: false, message: "user doesn't exist" });
+        }
+        if (!result?.verified) {
+            return res.status(400).send({ success: false, message: "please verify your email" });
+        }
         res.status(200).send({ success: true, data: result });
     } catch (error) {
         globalErrorHandler(error, req, res, next, 'user')
     }
 }
-
+// delete account 
+const DeleteAccount = async (req, res,next) => {
+    try {
+        const { email } = req.user;
+        const { password } = req.body
+        const user = await User.findOne({ email: email })
+        if (user) {
+            const result = await bcrypt.compare(password, user?.password);
+            if (result) {
+                const deleted = await User.deleteOne({ _id: user?._id })
+                // console.log(deleted)
+                if (!deleted) {
+                    return res.status(400).send({ success: false, message: "something went wrong" });
+                } else {
+                    return res.status(200).send({ success: true, message: "user deleted successfully", data: deleted });
+                }
+            } else {
+                return res.status(400).send({ success: false, message: "password doesn't match" });
+            }
+        } else {
+            return res.status(400).send({ success: false, message: "user doesn't exist" });
+        }
+    } catch (error) {
+        res.status(500).send({ success: false, message: error?.message || 'Internal server error', ...error });
+    }
+}
 module.exports = {
     SignUp,
     SignIn,
@@ -339,4 +373,5 @@ module.exports = {
     ResetPassword,
     VerifyCode,
     GetProfile,
+    DeleteAccount
 }

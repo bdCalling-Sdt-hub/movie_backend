@@ -4,7 +4,7 @@ const SettingsSchema = new Schema({
         type: String,
         required: [true, 'name is required'],
         unique: true,
-        enum: ['about', 'privacy', 'terms']
+        enum: ['About', 'Privacy', 'Terms']
     },
     value: {
         type: String,

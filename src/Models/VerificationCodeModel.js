@@ -1,5 +1,5 @@
 const { model, Schema } = require('mongoose');
-
+const cron = require('node-cron');
 const verificationModel = new Schema({
     email: {
         type: String,
@@ -9,12 +9,12 @@ const verificationModel = new Schema({
         type: String,
         required: false
     },
-    createdAt: {
-        type: Date,
-        default: Date.now(),
-        expires: 6000
-    }
 });
 
 const Verification = model('verification', verificationModel);
 module.exports = Verification;
+cron.schedule('* * * * *', async () => {
+    const expirationTime = new Date(Date.now() - 3 * 60 * 1000);
+    await Verification.deleteMany({ createdAt: { $lt: expirationTime } });
+    console.log('Deleted expired verification codes');
+});

@@ -11,8 +11,13 @@ const GetSettings = async (req, res) => {
         } else {
             return res.send({
                 success: true, data: {
+                    "_id": "",
                     "name": type,
                     "value": "",
+                    "value": "<p>This is answer this test</p>",
+                    "createdAt": "",
+                    "updatedAt": "",
+                    "__v": 0
                 }
             })
         }

@@ -4,6 +4,9 @@ const UnlinkFiles = async (filesToDelete) => {
         return false
     }
     filesToDelete.map(item => {
+        if (item?.includes('default')) {
+            return false
+        }
         fs.unlink(item, (err) => {
             if (err) {
                 console.error('Error deleting file:', err);

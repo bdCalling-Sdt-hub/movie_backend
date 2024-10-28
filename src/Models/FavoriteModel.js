@@ -6,8 +6,7 @@ const FavoriteSchema = new Schema({
         required: [true, 'user Id is required'],
     },
     movie: {
-        type: Schema.Types.ObjectId,
-        ref: 'Movie',
+        type: String,
         required: [true, 'movie Id is required'],
     },
 }, { timestamps: true });

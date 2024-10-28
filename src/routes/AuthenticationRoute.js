@@ -1,5 +1,5 @@
 
-const { SignUp, SignIn, UpdateUser, ChangePassword, SendVerifyEmail, VerifyCode, ResetPassword, GetProfile, } = require('../Controller/AuthenticationController');
+const { SignUp, SignIn, UpdateUser, ChangePassword, SendVerifyEmail, VerifyCode, ResetPassword, GetProfile, DeleteAccount, } = require('../Controller/AuthenticationController');
 const uploadFile = require('../middlewares/FileUpload/FileUpload');
 const VerificationToken = require('../middlewares/Token/VerificationToken');
 const verifyToken = require('../middlewares/Token/verifyToken');
@@ -13,5 +13,6 @@ AuthRoute.post('/sign-up', SignUp)
     .patch('/update-user', verifyToken, uploadFile(), UpdateUser)
     .patch('/change-password', verifyToken, ChangePassword)
     .get('/profile', verifyToken, GetProfile)
+    .delete('/delete-account', verifyToken, DeleteAccount)
 
 module.exports = AuthRoute

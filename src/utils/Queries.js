@@ -1,6 +1,7 @@
 const Queries = async (collectionModel, queryKeys, searchKeys, populatePath, selectFields) => {
     try {
         const { limit, page, sort, order, ...filters } = queryKeys;
+
         let query = {};
         // Handle search keys with regex
         if (Object.keys(searchKeys).length > 0) {
@@ -8,14 +9,14 @@ const Queries = async (collectionModel, queryKeys, searchKeys, populatePath, sel
                 [key]: { $regex: searchKeys[key], $options: "i" }
             }));
         }
-
         // Handle filters
         if (filters) {
             Object.keys(filters).forEach(key => {
-                query[key] = filters[key];
+                if (filters[key]) {
+                    query[key] = filters[key];
+                }
             });
         }
-
         // Handle sorting
         let sortOrder = {};
         if (sort) {
