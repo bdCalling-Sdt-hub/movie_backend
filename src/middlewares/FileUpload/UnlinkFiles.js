@@ -4,7 +4,7 @@ const UnlinkFiles = async (filesToDelete) => {
         return false
     }
     filesToDelete.map(item => {
-        if (item?.includes('default')) {
+        if (item?.includes('default') || item?.includes('profile')) {
             return false
         }
         fs.unlink(item, (err) => {
