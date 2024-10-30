@@ -64,6 +64,14 @@ const UserModel = new Schema({
         type: [String],
         required: false,
         default: []
+    },
+    subscription: {
+        type: Boolean,
+        default: false,
+    },
+    subscription_ends: {
+        type: Date,
+        default: null
     }
 }, { timestamps: true });
 
