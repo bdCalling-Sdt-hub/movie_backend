@@ -38,51 +38,7 @@ app.use('/favorite', FavoriteRoutes)
 app.use('/calender', CalenderRoutes)
 app.use('/overview', overviewRoutes)
 app.use('/follow', FollowRoutes)
-// app.get('/test', async (req, res) => {
-//   const result = await notifyUsersAboutActorMovies()
-//   return res.send(result)
-// })
 
-
-// app.get('/mail-token', async (req, res) => {
-//   // Extract authorization code from query parameters
-//   const authCode = req.query.code;
-
-//   // Define token URL with /consumers endpoint
-//   const tokenUrl = 'https://login.microsoftonline.com/consumers/oauth2/v2.0/token';
-//   const tokenData = {
-//     client_id: 'f4102eee-7cee-44eb-af5c-83149d7ff593',  // Your Client ID
-//     client_secret: '68h8Q~zozmpfp-9cDKl3dJ0P5n_Nzf.vWUkS0adq',  // Your Client Secret
-//     grant_type: 'authorization_code',
-//     code: authCode,  // The authorization code from the query parameters
-//     redirect_uri: 'http://localhost',  // The same redirect URI used during app registration
-//     scope: 'https://graph.microsoft.com/Mail.Send https://graph.microsoft.com/Mail.Read',
-//   };
-
-//   try {
-//     // Exchange authorization code for access token
-//     const response = await axios.post(tokenUrl, qs.stringify(tokenData), {
-//       headers: {
-//         'Content-Type': 'application/x-www-form-urlencoded',
-//       },
-//     });
-
-//     // Extract access token from response
-//     const tokens = response.data;
-//     console.log('Access Token:', tokens.access_token);
-
-//     // Send the access token as a response
-//     res.json({
-//       access_token: tokens.access_token,
-//       refresh_token: tokens.refresh_token,
-//       expires_in: tokens.expires_in,
-//     });
-//   } catch (error) {
-//     // Handle errors
-//     console.error('Error exchanging authorization code for tokens:', error.response.data);
-//     res.status(500).json({ error: 'Failed to exchange authorization code for tokens', err: error.response.data });
-//   }
-// });
 app.post('/not', async (req, res) => {
   try {
     const { title, movie, message, type,user } = req.body;
