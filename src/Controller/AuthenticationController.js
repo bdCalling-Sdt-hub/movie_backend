@@ -212,7 +212,7 @@ const ChangePassword = async (req, res, next) => {
 }
 
 // forget password send verification code
-const SendVerifyEmail = async (req, res,next) => {
+const SendVerifyEmail = async (req, res, next) => {
     try {
         const { email } = req.body
         if (!email) {
@@ -249,7 +249,7 @@ const SendVerifyEmail = async (req, res,next) => {
 }
 
 //verify code
-const VerifyCode = async (req, res,next) => {
+const VerifyCode = async (req, res, next) => {
     const { code, email } = req.body
     try {
         const [verify, user] = await Promise.all([
@@ -283,7 +283,7 @@ const VerifyCode = async (req, res,next) => {
 }
 
 //reset password
-const ResetPassword = async (req, res,next) => {
+const ResetPassword = async (req, res, next) => {
     try {
         const requestedUser = req?.user
         const verify = await Verification.findOne({ email: requestedUser?.email, code: requestedUser?.code })
@@ -323,7 +323,7 @@ const ResetPassword = async (req, res,next) => {
 }
 
 // get user profile
-const GetProfile = async (req, res,next) => {
+const GetProfile = async (req, res, next) => {
     const { email } = req.user;
     try {
         const result = await User.findOne({ email: email })
@@ -339,7 +339,7 @@ const GetProfile = async (req, res,next) => {
     }
 }
 // delete account 
-const DeleteAccount = async (req, res,next) => {
+const DeleteAccount = async (req, res, next) => {
     try {
         const { email } = req.user;
         const { password } = req.body
@@ -364,6 +364,21 @@ const DeleteAccount = async (req, res,next) => {
         res.status(500).send({ success: false, message: error?.message || 'Internal server error', ...error });
     }
 }
+const AdminGetAllUser = async (req, res, next) => {
+    try {
+        if (req.user?.role !== "ADMIN") {
+            return res.status(403).send({ success: false, message: 'you are unauthorized ' })
+        }
+        console.log('admin')
+        const { search, ...queryKeys } = req.query;
+        const searchKey = {}
+        if (search) searchKey.name = search
+        const result = await Queries(User, queryKeys, searchKey)
+        return res.status(200).send({ message: 'User retrieve Successfully', ...result })
+    } catch (error) {
+        globalErrorHandler(error, req, res, next, 'user')
+    }
+}
 module.exports = {
     SignUp,
     SignIn,
@@ -373,5 +388,6 @@ module.exports = {
     ResetPassword,
     VerifyCode,
     GetProfile,
-    DeleteAccount
+    DeleteAccount,
+    AdminGetAllUser
 }

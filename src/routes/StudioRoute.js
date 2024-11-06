@@ -1,4 +1,4 @@
-const { GetTMDBStudioList, CreateStudio, DeleteStudio, GetStudio, GetStudioDetails, getRandomStudios } = require("../Controller/StudioController");
+const { GetTMDBStudioList, CreateStudio, DeleteStudio, GetStudio, GetStudioDetails, getRandomStudios, TopStudios } = require("../Controller/StudioController");
 const uploadFile = require("../middlewares/FileUpload/FileUpload");
 const verifyToken = require("../middlewares/Token/verifyToken");
 
@@ -9,5 +9,6 @@ StudioRoutes.get("/get-studio-list/:type", verifyToken, GetTMDBStudioList)
     .get("/get-studio", GetStudio)
     .get("/get-studio/:id", verifyToken,GetStudioDetails)
     .get("/related-studio",getRandomStudios )
+    .get("/top-studio",TopStudios )
 
 module.exports = StudioRoutes
