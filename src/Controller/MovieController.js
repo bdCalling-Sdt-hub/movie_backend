@@ -16,7 +16,14 @@ const GetTMDBMovieList = async (req, res, next) => {
 
         // Handle banner request
         if (banner) {
-            const response = await axios.get(`https://api.themoviedb.org/3/movie/popular`, {
+            // const response = await axios.get(`https://api.themoviedb.org/3/movie/popular`, {
+            //     params: {
+            //         api_key: API_KEY,
+            //         language: 'en-US',
+            //         page: 1
+            //     }
+            // });
+            const response = await axios.get(`https://api.themoviedb.org/3/movie/upcoming`, {
                 params: {
                     api_key: API_KEY,
                     language: 'en-US',
@@ -247,7 +254,7 @@ const adminGetMoviesByStudio = async (req, res, next) => {
     }
 };
 
-module.exports = adminGetMoviesByStudio;
+
 
 
 //get all movie user
@@ -433,8 +440,51 @@ const GetMovieDetails = async (req, res, next) => {
     }
 };
 
+
+const SpinData = async (req, res, next) => {
+    try {
+        const { studio_id, actor_id, type, page } = req.query;
+        const studioIds = studio_id?.split(',');
+
+        const baseUrl = `https://api.themoviedb.org/3/discover/${type || 'movie'}?api_key=${API_KEY}&page=${page || 1}`;
+        const promises = studioIds?.map(studio => {
+            let url = baseUrl;
+            if (actor_id) url += `&with_cast=${actor_id}`;
+            if (studio) url += `&with_companies=${studio}`;
+
+            return axios.get(url).then(response => {
+                return response.data.results?.slice(0, 5)?.map(item => ({
+                    adult: item?.adult,
+                    background_color: `https://image.tmdb.org/t/p/w1280${item?.backdrop_path}`,
+                    movie_types: item?.genre_ids,
+                    movie_id: item?.id,
+                    original_language: item?.original_language,
+                    original_title: item?.original_title || item?.original_name,
+                    overview: item?.overview,
+                    popularity: item?.popularity,
+                    poster: `https://image.tmdb.org/t/p/w500${item?.poster_path}`,
+                    release_date: item?.release_date || item?.first_air_date,
+                    title: item?.title || item?.name,
+                    video: item?.video,
+                    rating: item?.vote_average,
+                    vote: item?.vote_count
+                }));
+            });
+        });
+
+        const dataArrays = await Promise.all(promises);
+        const combinedData = dataArrays.flat();
+        res.status(200).send({success:true,data:combinedData?.slice(0,10)});
+    } catch (error) {
+        globalErrorHandler(error, req, res, next, "Movie");
+    }
+};
+
+// Define a route for the API
+// Start the Express server
+
 // const get movie details
-module.exports = { GetTMDBMovieList, AddMovie, GetAllMovie, DeleteMovie, GetMovieDetails, adminGetMoviesByStudio }
+module.exports = { GetTMDBMovieList, AddMovie, GetAllMovie, DeleteMovie, GetMovieDetails, adminGetMoviesByStudio,SpinData }
 
 
 // const GetTMDBMovieList = async (req, res, next) => {

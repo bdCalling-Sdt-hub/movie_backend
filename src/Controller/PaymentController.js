@@ -52,7 +52,7 @@ const SavePayment = async (req, res) => {
             });
         }
         const time = new Date();
-        const endTime = time.setFullYear(this.endTime.getFullYear() + 1);
+        const endTime = time.setFullYear(time.getFullYear() + 1);
         const subscription = new Subscription({ user: id, endTime: endTime })
         await Promise.all([
             User.findByIdAndUpdate(
@@ -69,7 +69,8 @@ const SavePayment = async (req, res) => {
 
         return res.status(200).send({
             success: true,
-            message: "Payment Subscription Started successfully"
+            message: "Payment Subscription Started successfully",
+            payment_successful: true
         });
     } catch (error) {
         console.error("Error in SavePayment:", error); // For server-side debugging
